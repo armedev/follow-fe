@@ -10,6 +10,7 @@ import {
 import useWs from "../hooks/ws";
 import { useIncomingEvents, useSubscribeToDomEvents } from "../hooks/domEvent";
 import { LeaderType } from "../utils/constants";
+import { BACKEND_ADDRESS } from "../utils/config";
 
 type FollowContextType = {
   sendMessage?: (
@@ -34,7 +35,7 @@ export const useFollow = () => useContext(FollowContext);
 
 export default function FollowProvider({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null!);
-  const value = useWs("ws://192.168.68.7:8000/follow");
+  const value = useWs(BACKEND_ADDRESS);
 
   const [leader, setLeader] = useState<LeaderType>("all-client");
 
