@@ -1,0 +1,23 @@
+.layout {
+}
+
+.navbar {
+  width: 100%;
+  padding: 20px 0px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.modal {
+  width: 50vw;
+  height: 50vh;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  background-color: blue;
+}
