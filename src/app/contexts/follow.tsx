@@ -52,8 +52,16 @@ export default function FollowProvider({ children }: { children: ReactNode }) {
 
   return (
     <FollowContext.Provider value={{ ...value, leader, setLeader }}>
-      <div ref={ref} id="follow-context">
-        {children}
+      <div
+        ref={ref}
+        id="follow-context"
+        style={{
+          width: "100%",
+          overflow: "scroll",
+          border: "1px solid blue",
+        }}
+      >
+        <div key={leader}>{children}</div>
       </div>
     </FollowContext.Provider>
   );

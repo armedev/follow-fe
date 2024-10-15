@@ -1,5 +1,9 @@
 export const COMMANDS = {
   CLICK: "CLICK",
+  HOVER: "HOVER",
+  MOUSE_DOWN: "MOUSE_DOWN",
+  MOUSE_ENTER: "MOUSE_ENTER",
+  MOUSE_LEAVE: "MOUSE_LEAVE",
   SCROLL: "SCROLL",
   INPUT: "INPUT",
   URL: "URL",
@@ -26,7 +30,7 @@ export const JSONPLACEHOLDER = "JSON::";
 export const FOLLOWME = `FOLLOWME`;
 export const UNFOLLOWME = `UNFOLLOWME`;
 
-export const WS_LOCAL_STORAGE_UPDATE = "ws_local_storage_update";
+export const LOCAL_STORAGE_CUSTOM_EVENT_WS = "ws_local_storage_update";
 
 export const BLACKLISTED_LOCAL_STORAGE_KEYS = ["aly-cache"];
 

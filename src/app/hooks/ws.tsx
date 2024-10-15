@@ -12,19 +12,29 @@ const useWs = (url: string) => {
     sockerRef.current = new WebSocket(url);
 
     sockerRef.current.onopen = (ev) => {
-      console.log("open", ev);
+      console.log("helloopen", ev);
       setConnected(true);
     };
 
     sockerRef.current.onerror = (ev) => {
-      console.log("error", ev);
+      console.log("hello error", ev);
+      setConnected(false);
     };
 
     sockerRef.current.onmessage = async (ev) => {
       setRecentEvent(ev);
     };
 
-    return () => sockerRef.current?.close();
+    sockerRef.current.onclose = async (ev) => {
+      debugger;
+      console.log("hello close", ev);
+
+      setConnected(false);
+    };
+
+    return () => {
+      sockerRef.current?.close();
+    };
   }, [url]);
 
   const sendMessage = (

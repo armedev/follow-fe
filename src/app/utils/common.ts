@@ -1,6 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export function debounce<Params extends any[]>(
-  func: (...args: Params) => any,
+import { DataIgnoreType } from "./constants";
+
+export function debounce<Params extends unknown[]>(
+  func: (...args: Params) => unknown,
   timeout = 300,
 ): (...args: Params) => void {
   let timer: NodeJS.Timeout;
@@ -12,7 +13,7 @@ export function debounce<Params extends any[]>(
   };
 }
 
-export function elemToSelector(elem: HTMLElement): string {
+export function elemToSelector(elem: HTMLElement, depth = 10): string {
   const { tagName = "", id, className, parentNode } = elem;
 
   if (tagName === "HTML") return "HTML";
@@ -21,9 +22,9 @@ export function elemToSelector(elem: HTMLElement): string {
 
   str += id !== "" ? `#${id}` : "";
 
-  if (className) {
-    const classes = className.split(/\s/);
-    for (let i = 0; i < classes.length; i++) {
+  if (typeof className === "string") {
+    const classes = (className || "").split(/\s/);
+    for (let i = 0; i < classes.length && i < 2; i++) {
       if (typeof classes[i] === "string" && classes[i].length > 0)
         str += `.${classes[i]}`;
     }
@@ -41,7 +42,11 @@ export function elemToSelector(elem: HTMLElement): string {
 
   str += `:nth-child(${childIndex})`;
 
-  return `${elemToSelector(parentNode as HTMLElement)} > ${str}`;
+  depth--;
+
+  return depth < 1 || parentNode == null
+    ? str
+    : `${elemToSelector(parentNode as HTMLElement, depth)} > ${str}`;
 }
 
 /**
@@ -63,9 +68,23 @@ export const triggerInputChange = (node: HTMLElement, value = "") => {
     const isSelect =
       Object.getPrototypeOf(node).constructor === window.HTMLSelectElement;
 
-    const event = new Event(isSelect ? "change" : "input", { bubbles: true });
+    const event = new Event(isSelect ? "change" : "input", {
+      bubbles: true,
+    });
 
     setValue.call(node, value);
     node.dispatchEvent(event);
   }
+};
+
+export const getTargetBasedOnAttr = (e: Event, attr: DataIgnoreType) => {
+  const target = e.target as HTMLElement;
+
+  if (target == null) return null;
+
+  const ignoreAttribute = target.getAttribute("data-ignore") as DataIgnoreType;
+
+  if (ignoreAttribute === attr) return null;
+
+  return target;
 };

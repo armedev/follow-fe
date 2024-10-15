@@ -3,7 +3,7 @@
 import { ChangeEvent, useEffect, useState } from "react";
 import styles from "./follow.module.scss";
 import { useRouter } from "next/navigation";
-import { WS_LOCAL_STORAGE_UPDATE } from "../utils/constants";
+import { LOCAL_STORAGE_CUSTOM_EVENT_WS } from "../utils/constants";
 
 export default function Page() {
   const [open, setOpen] = useState(false);
@@ -20,10 +20,13 @@ export default function Page() {
 
     handleStorageUpdate();
 
-    window.addEventListener(WS_LOCAL_STORAGE_UPDATE, handleStorageUpdate);
+    window.addEventListener(LOCAL_STORAGE_CUSTOM_EVENT_WS, handleStorageUpdate);
 
     return () =>
-      window.removeEventListener(WS_LOCAL_STORAGE_UPDATE, handleStorageUpdate);
+      window.removeEventListener(
+        LOCAL_STORAGE_CUSTOM_EVENT_WS,
+        handleStorageUpdate,
+      );
   }, []);
 
   const router = useRouter();
@@ -91,6 +94,23 @@ export default function Page() {
         >
           hide blue box
         </button>
+
+        <span
+          style={{ width: 200, height: 300, backgroundColor: "red" }}
+          onMouseLeave={(e) => {
+            console.log(e, "leave");
+            const target = e.target as HTMLElement;
+            target.style.backgroundColor = "red";
+          }}
+          onMouseEnter={(e) => {
+            console.log(e, "enter");
+            const target = e.target as HTMLElement;
+            target.style.backgroundColor = "blue";
+          }}
+        >
+          jkasjd aksjda skajsd
+        </span>
+
         <div>
           <label htmlFor="cars">Choose a car:</label>
 

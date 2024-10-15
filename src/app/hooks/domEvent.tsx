@@ -1,15 +1,22 @@
-import { Dispatch, SetStateAction, useEffect } from "react";
-import { getSenderFromVersion } from "../utils/commands";
+import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ALLOWED_LOCAL_STORAGE_KEYS,
   BLACKLISTED_LOCAL_STORAGE_KEYS,
   CURRENT_VERSION,
-  DataIgnoreType,
   LeaderType,
 } from "../utils/constants";
-import { debounce, elemToSelector } from "../utils/common";
-import { handleIncomingEvent } from "../utils/event";
-import { usePathname, useRouter } from "next/navigation";
+import {
+  handleClick,
+  handleHover,
+  handleInput,
+  handleMouseDown,
+  handleMouseEnter,
+  handleMouseLeave,
+  handleScroll,
+  getSenderFromVersion,
+} from "../utils/event-sender";
+import { handleIncomingEvent } from "../utils/event-runner";
 
 export const useSubscribeToDomEvents = (
   ref: HTMLElement,
@@ -20,15 +27,34 @@ export const useSubscribeToDomEvents = (
   isConnected: boolean,
 ) => {
   const path = usePathname();
+  const searchQuery = useSearchParams();
+  const url = useMemo(() => `${path}?${searchQuery}`, [path, searchQuery]);
 
+  const [lastChanged, setLastChanged] = useState(Date.now());
+
+  //tree change
+  useEffect(() => {
+    if (sendMessage == null || !isConnected || !isLeader) return;
+    const observer = new MutationObserver(() => {
+      debugger;
+      setLastChanged(Date.now());
+    });
+
+    observer.observe(ref, { childList: true, subtree: true });
+
+    return () => observer.disconnect();
+  }, [ref, path, sendMessage, isConnected, isLeader]);
+
+  //path
   useEffect(() => {
     if (sendMessage == null || !isConnected || !isLeader) return;
 
     const sender = getSenderFromVersion(CURRENT_VERSION);
 
-    sender.send("URL", { path }, sendMessage);
-  }, [path, sendMessage, isConnected, isLeader]);
+    sender.send("URL", { path: url }, sendMessage);
+  }, [url, sendMessage, isConnected, isLeader]);
 
+  //localstorage
   useEffect(() => {
     if (sendMessage == null || !isConnected || !isLeader) return;
 
@@ -51,6 +77,8 @@ export const useSubscribeToDomEvents = (
       {},
     );
 
+    if (!Object.keys(wholeLocalStorage).length) return;
+
     const sender = getSenderFromVersion(CURRENT_VERSION);
     const id = setTimeout(
       () => sender.send("LOCAL_STORAGE", wholeLocalStorage, sendMessage),
@@ -60,85 +88,56 @@ export const useSubscribeToDomEvents = (
     return () => clearTimeout(id);
   }, [sendMessage, isConnected, isLeader]);
 
+  // events
   useEffect(() => {
     if (sendMessage == null || ref == null || !isLeader) return;
 
-    const sender = getSenderFromVersion(CURRENT_VERSION);
+    const inputs = Array.from(ref.querySelectorAll("input"));
+    const textareas = Array.from(ref.querySelectorAll("textarea"));
+    const selects = Array.from(ref.querySelectorAll("select"));
 
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
+    const handleClickEvent = handleClick(sendMessage);
+    const handleMouseDownEvent = handleMouseDown(sendMessage);
+    const handleHoverEvent = handleHover(sendMessage);
+    const handleScrollEvent = handleScroll(sendMessage);
+    const handleInputEvent = handleInput(sendMessage);
+    const handleMouseEnterEvent = handleMouseEnter(sendMessage);
+    const handleMouseLeaveEvent = handleMouseLeave(sendMessage);
 
-      const ignoreAttribute = target.getAttribute(
-        "data-ignore",
-      ) as DataIgnoreType;
-
-      if (ignoreAttribute === "CLICK") return;
-
-      sender.send("CLICK", { selector: elemToSelector(target) }, sendMessage);
-    };
-
-    const handleScroll = debounce((e: Event) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const target = (e.target as any).scrollingElement as HTMLElement;
-      const top = target.scrollTop;
-      const left = target.scrollLeft;
-
-      const ignoreAttribute = target.getAttribute(
-        "data-ignore",
-      ) as DataIgnoreType;
-
-      if (ignoreAttribute === "SCROLL") return;
-
-      sender.send(
-        "SCROLL",
-        { selector: elemToSelector(target), top, left },
-        sendMessage,
-      );
-    });
-
-    const handleInput = debounce((e: Event) => {
-      const target = e.target as HTMLInputElement;
-
-      const ignoreAttribute = target.getAttribute(
-        "data-ignore",
-      ) as DataIgnoreType;
-
-      if (ignoreAttribute === "INPUT") return;
-
-      const value = target.value;
-
-      sender.send(
-        "INPUT",
-        { selector: elemToSelector(e.target as HTMLInputElement), value },
-        sendMessage,
-      );
-    });
-
-    ref.addEventListener("click", handleClick);
-    window.addEventListener("scroll", handleScroll);
-
-    const inputs = Array.from(document.querySelectorAll("input"));
-    const textareas = Array.from(document.querySelectorAll("textarea"));
-    const selects = Array.from(document.querySelectorAll("select"));
-
-    inputs.forEach((input) => input.addEventListener("input", handleInput));
-    textareas.forEach((input) => input.addEventListener("input", handleInput));
-    selects.forEach((input) => input.addEventListener("input", handleInput));
+    ref.addEventListener("click", handleClickEvent);
+    ref.addEventListener("mousedown", handleMouseDownEvent);
+    ref.addEventListener("mouseover", handleHoverEvent);
+    ref.addEventListener("mouseenter", handleMouseEnterEvent);
+    ref.addEventListener("mouseleave", handleMouseLeaveEvent);
+    window.addEventListener("scroll", handleScrollEvent, true);
+    inputs.forEach((input) =>
+      input.addEventListener("input", handleInputEvent),
+    );
+    textareas.forEach((input) =>
+      input.addEventListener("input", handleInputEvent),
+    );
+    selects.forEach((input) =>
+      input.addEventListener("input", handleInputEvent),
+    );
 
     return () => {
-      ref.removeEventListener("click", handleClick);
-      window.removeEventListener("scroll", handleScroll);
+      ref.removeEventListener("click", handleClickEvent);
+      ref.removeEventListener("mousedown", handleMouseDownEvent);
+      ref.removeEventListener("mouseover", handleHoverEvent);
+      ref.removeEventListener("mouseenter", handleMouseEnterEvent);
+      ref.removeEventListener("mouseleave", handleMouseLeaveEvent);
+      window.removeEventListener("scroll", handleScrollEvent);
       inputs.forEach((input) =>
-        input.removeEventListener("input", handleInput),
+        input.removeEventListener("input", handleInputEvent),
       );
       textareas.forEach((input) =>
-        input.removeEventListener("input", handleInput),
+        input.removeEventListener("input", handleInputEvent),
       );
       selects.forEach((input) =>
-        input.removeEventListener("input", handleInput),
+        input.removeEventListener("input", handleInputEvent),
       );
     };
-  }, [sendMessage, ref, isLeader]);
+  }, [sendMessage, ref, isLeader, lastChanged]);
 };
 
 export const useIncomingEvents = (

@@ -1,6 +1,7 @@
 "use client";
 import { useFollow } from "@/app/contexts/follow";
-import { sendFollowMe, sendUnFollowMe } from "@/app/utils/commands";
+import { sendFollowMe, sendUnFollowMe } from "@/app/utils/event-sender";
+import { useRouter } from "next/navigation";
 
 type PropsType = {
   leaderLabel: string;
@@ -9,13 +10,16 @@ type PropsType = {
 
 export default function FollowButton({ leaderLabel, clientLabel }: PropsType) {
   const { setLeader, leader, sendMessage, isConnected } = useFollow();
+  const router = useRouter();
 
-  const handleClick = () => {
+  const handleClick = async () => {
     if (sendMessage == null || !isConnected) return;
     if (leader === "leader") {
       sendUnFollowMe(sendMessage);
       setLeader("all-client");
     } else {
+      debugger;
+      router.refresh();
       sendFollowMe(sendMessage);
       setLeader("leader");
     }
