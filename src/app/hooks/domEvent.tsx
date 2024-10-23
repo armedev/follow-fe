@@ -28,7 +28,11 @@ export const useSubscribeToDomEvents = (
 ) => {
   const path = usePathname();
   const searchQuery = useSearchParams();
-  const url = useMemo(() => `${path}?${searchQuery}`, [path, searchQuery]);
+
+  const url = useMemo(
+    () => (searchQuery.size ? `${path}?${searchQuery}` : path),
+    [path, searchQuery],
+  );
 
   const [lastChanged, setLastChanged] = useState(Date.now());
 
@@ -48,11 +52,12 @@ export const useSubscribeToDomEvents = (
   //path
   useEffect(() => {
     if (sendMessage == null || !isConnected || !isLeader) return;
+    debugger;
 
     const sender = getSenderFromVersion(CURRENT_VERSION);
 
     sender.send("URL", { path: url }, sendMessage);
-  }, [url, sendMessage, isConnected, isLeader]);
+  }, [url, isConnected, isLeader, sendMessage]);
 
   //localstorage
   useEffect(() => {
